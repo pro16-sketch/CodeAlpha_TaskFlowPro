@@ -161,8 +161,13 @@ function TaskCard({ task, colIndex, onMove, onDelete, onOpen }) {
 
   return (
     <div
+  draggable
+  onDragStart={(e) => {
+    e.dataTransfer.setData('text/plain', task._id)
+    e.dataTransfer.effectAllowed = 'move'
+  }}
   onClick={onOpen}
-  className="group cursor-pointer rounded-xl border border-white/10 bg-white/6 p-4 transition hover:border-accent/50"
+  className="group cursor-grab rounded-xl border border-white/10 bg-white/6 p-4 transition hover:border-accent/50 active:cursor-grabbing"
 >
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
@@ -301,7 +306,8 @@ function Board() {
   const [error, setError] = useState('')
   const [taskModal, setTaskModal] = useState(null)
   const [projectModal, setProjectModal] = useState(false)
-const [openTask, setOpenTask] = useState(null) 
+const [openTask, setOpenTask] = useState(null)
+const [dragOver, setDragOver] = useState(null) 
   
   
 
@@ -486,8 +492,28 @@ const [openTask, setOpenTask] = useState(null)
               {COLUMNS.map((col, colIndex) => {
                 const colTasks = tasks.filter((t) => t.status === col.key)
                 return (
-                  <section key={col.key} className="rounded-2xl border border-white/8 bg-white/3 p-3 backdrop-blur-md">
-                    <div className="mb-3 flex items-center justify-between px-1">
+<section
+  key={col.key}
+  onDragOver={(e) => {
+    e.preventDefault()
+    setDragOver(col.key)
+  }}
+  onDragLeave={(e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(null)
+  }}
+  onDrop={(e) => {
+    e.preventDefault()
+    setDragOver(null)
+    const id = e.dataTransfer.getData('text/plain')
+    const dragged = tasks.find((t) => t._id === id)
+    if (dragged && dragged.status !== col.key) moveTask(dragged, col.key)
+  }}
+  className={`rounded-2xl border p-3 backdrop-blur-md transition ${
+    dragOver === col.key
+      ? 'border-accent-text/60 bg-white/8'
+      : 'border-white/8 bg-white/3'
+  }`}
+>                    <div className="mb-3 flex items-center justify-between px-1">
                       <h3 className="flex items-center gap-2 font-serif text-lg font-semibold tracking-tight text-zinc-200">
                         {col.title}
                         <span className="rounded-md bg-white/8 px-1.5 py-0.5 text-[11px] text-zinc-400">
