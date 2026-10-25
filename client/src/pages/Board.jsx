@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { request } from '../api'
+import TaskModal from '../components/TaskModal'
 import {
   LayoutDashboard, FolderKanban, CheckSquare, Bell, Settings,
   Search, Plus, MoreHorizontal, ArrowUpDown, SlidersHorizontal,
@@ -152,14 +153,17 @@ function NewTaskModal({ defaultStatus, onClose, onCreate }) {
   )
 }
 
-function TaskCard({ task, colIndex, onMove, onDelete }) {
+function TaskCard({ task, colIndex, onMove, onDelete, onOpen }) {
   const subtasks = task.subtasks || []
   const done = subtasks.filter((s) => s.done).length
   const percent = subtasks.length ? Math.round((done / subtasks.length) * 100) : 0
   const assignees = (task.assignees || []).map((a) => a.name)
 
   return (
-    <div className="group rounded-xl border border-white/10 bg-white/6 p-4 transition hover:border-accent/50">
+    <div
+  onClick={onOpen}
+  className="group cursor-pointer rounded-xl border border-white/10 bg-white/6 p-4 transition hover:border-accent/50"
+>
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
           <span className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${priorityStyle[task.priority]}`}>
@@ -169,7 +173,10 @@ function TaskCard({ task, colIndex, onMove, onDelete }) {
             {task.category}
           </span>
         </div>
-        <div className="flex gap-1 text-zinc-500 opacity-0 transition group-hover:opacity-100">
+        <div
+  onClick={(e) => e.stopPropagation()}
+  className="flex gap-1 text-zinc-500 opacity-0 transition group-hover:opacity-100"
+>
           {colIndex > 0 && (
             <button title="Move left" onClick={() => onMove(COLUMNS[colIndex - 1].key)} className="hover:text-zinc-100">
               <ChevronLeft size={15} />
@@ -294,6 +301,9 @@ function Board() {
   const [error, setError] = useState('')
   const [taskModal, setTaskModal] = useState(null)
   const [projectModal, setProjectModal] = useState(false)
+const [openTask, setOpenTask] = useState(null) 
+  
+  
 
   const tabs = ['Overview', 'Board', 'Discussions', 'Team', 'Files']
   const activeProject = projects.find((p) => p._id === activeId)
@@ -365,6 +375,10 @@ function Board() {
       setError(err.message)
     }
   }
+  const updateTask = (updated) => {
+  setTasks((prev) => prev.map((t) => (t._id === updated._id ? updated : t)))
+  setOpenTask(updated)
+}
 
   const invite = async () => {
     const email = window.prompt('Email of the user to add (they must have signed up):')
@@ -488,12 +502,13 @@ function Board() {
                     <div className="space-y-3">
                       {colTasks.map((t) => (
                         <TaskCard
-                          key={t._id}
-                          task={t}
-                          colIndex={colIndex}
-                          onMove={(status) => moveTask(t, status)}
-                          onDelete={() => deleteTask(t)}
-                        />
+  key={t._id}
+  task={t}
+  colIndex={colIndex}
+  onMove={(status) => moveTask(t, status)}
+  onDelete={() => deleteTask(t)}
+  onOpen={() => setOpenTask(t)}
+/>
                       ))}
                       {colTasks.length === 0 && (
                         <p className="px-1 py-6 text-center text-xs text-zinc-600">No tasks here</p>
@@ -512,6 +527,14 @@ function Board() {
       )}
       {taskModal && (
         <NewTaskModal defaultStatus={taskModal} onClose={() => setTaskModal(null)} onCreate={createTask} />
+      )}
+      
+      {openTask && (
+        <TaskModal
+          task={openTask}
+          onClose={() => setOpenTask(null)}
+          onUpdated={updateTask}
+        />
       )}
     </div>
   )

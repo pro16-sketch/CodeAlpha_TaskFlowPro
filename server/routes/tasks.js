@@ -1,6 +1,7 @@
 const express = require('express')
 const Project = require('../models/Project')
 const Task = require('../models/Task')
+const Comment = require('../models/Comment')
 const auth = require('../middleware/auth')
 
 const router = express.Router()
@@ -45,12 +46,58 @@ router.patch('/:id', async (req, res) => {
   }
 })
 
-// Task delete
+// Task delete (uske comments bhi)
 router.delete('/:id', async (req, res) => {
   const task = await loadTask(req, res)
   if (!task) return
+  await Comment.deleteMany({ task: task._id })
   await task.deleteOne()
   res.json({ message: 'Task deleted' })
+})
+
+// Task ke saare comments
+router.get('/:id/comments', async (req, res) => {
+  const task = await loadTask(req, res)
+  if (!task) return
+  const comments = await Comment.find({ task: task._id })
+    .populate('author', 'name')
+    .sort('createdAt')
+  res.json(comments)
+})
+
+// Naya comment
+router.post('/:id/comments', async (req, res) => {
+  const task = await loadTask(req, res)
+  if (!task) return
+
+  const text = req.body.text?.trim()
+  if (!text) return res.status(400).json({ message: 'Comment cannot be empty' })
+
+  try {
+    const comment = await Comment.create({ task: task._id, author: req.userId, text })
+    await comment.populate('author', 'name')
+    res.status(201).json(comment)
+  } catch (err) {
+    res.status(400).json({ message: err.message })
+  }
+})
+
+// Comment delete (sirf likhne wala)
+router.delete('/:id/comments/:commentId', async (req, res) => {
+  const task = await loadTask(req, res)
+  if (!task) return
+
+  try {
+    const comment = await Comment.findOne({ _id: req.params.commentId, task: task._id })
+    if (!comment) return res.status(404).json({ message: 'Comment not found' })
+    if (comment.author.toString() !== req.userId) {
+      return res.status(403).json({ message: 'You can delete only your own comments' })
+    }
+    await comment.deleteOne()
+    res.json({ message: 'Comment deleted' })
+  } catch {
+    res.status(400).json({ message: 'Invalid comment id' })
+  }
 })
 
 module.exports = router
