@@ -21,7 +21,7 @@ function timeAgo(date) {
   return `${Math.floor(h / 24)}d ago`
 }
 
-export default function TaskModal({ task, onClose, onUpdated }) {
+export default function TaskModal({ task,members = [], onClose, onUpdated }) {
   const { user, token } = useAuth()
   const myId = user?.id || user?._id
 
@@ -33,7 +33,25 @@ export default function TaskModal({ task, onClose, onUpdated }) {
   const subtasks = task.subtasks || []
   const done = subtasks.filter((s) => s.done).length
   const percent = subtasks.length ? Math.round((done / subtasks.length) * 100) : 0
+    
 
+  const assigneeIds = (task.assignees || []).map((a) => a._id || a)
+
+  const toggleAssignee = async (memberId) => {
+    const next = assigneeIds.includes(memberId)
+      ? assigneeIds.filter((id) => id !== memberId)
+      : [...assigneeIds, memberId]
+    try {
+      const updated = await request(`/tasks/${task._id}`, {
+        method: 'PATCH',
+        token,
+        body: { assignees: next },
+      })
+      onUpdated(updated)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
   useEffect(() => {
     request(`/tasks/${task._id}/comments`, { token })
       .then(setComments)
@@ -116,6 +134,28 @@ export default function TaskModal({ task, onClose, onUpdated }) {
           {error && (
             <p className="rounded-lg bg-red-400/10 px-3 py-2 text-xs text-red-300">{error}</p>
           )}
+          <section>
+            <h4 className="font-serif text-lg font-semibold text-zinc-200">Assignees</h4>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {members.map((m) => {
+                const on = assigneeIds.includes(m._id)
+                return (
+                  <button
+                    key={m._id}
+                    type="button"
+                    onClick={() => toggleAssignee(m._id)}
+                    className={`rounded-full border px-3 py-1 text-xs transition ${
+                      on
+                        ? 'border-accent bg-accent/25 text-accent-text'
+                        : 'border-white/10 text-zinc-400 hover:bg-white/5'
+                    }`}
+                  >
+                    {m.name}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
 
           {subtasks.length > 0 && (
             <section>

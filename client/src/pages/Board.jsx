@@ -13,6 +13,7 @@ const COLUMNS = [
   { key: 'inprogress', title: 'In Progress' },
   { key: 'done', title: 'Done' },
 ]
+const PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2 }
 
 const PROJECT_COLORS = [
   'bg-sky-300', 'bg-slate-300', 'bg-cyan-300',
@@ -295,7 +296,47 @@ function Sidebar({ user, logout, projects, activeId, onSelect, onNewProject }) {
     </aside>
   )
 }
+function StatsRow({ tasks }) {
+  const total = tasks.length
+  const count = (status) => tasks.filter((t) => t.status === status).length
+  const done = count('done')
+  const percent = total ? Math.round((done / total) * 100) : 0
+  const overdue = tasks.filter(
+    (t) => t.dueDate && t.status !== 'done' && new Date(t.dueDate) < new Date()
+  ).length
 
+  const cards = [
+    { label: 'Total tasks', value: total },
+    { label: 'In progress', value: count('inprogress') },
+    { label: 'Completed', value: done },
+    { label: 'Overdue', value: overdue, warn: overdue > 0 },
+  ]
+
+  return (
+    <div className="mt-5 rounded-2xl border border-white/8 bg-white/3 p-4 backdrop-blur-md">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {cards.map((c) => (
+          <div key={c.label} className="rounded-xl bg-black/30 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-wider text-zinc-500">{c.label}</p>
+            <p className={`mt-1 font-serif text-3xl font-semibold ${c.warn ? 'text-red-300' : 'text-zinc-100'}`}>
+              {c.value}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4">
+        <div className="mb-1.5 flex justify-between text-xs text-zinc-500">
+          <span>Project progress</span>
+          <span>{percent}%</span>
+        </div>
+        <div className="h-2 rounded-full bg-white/10">
+          <div className="h-2 rounded-full bg-accent transition-all" style={{ width: `${percent}%` }} />
+        </div>
+      </div>
+    </div>
+  )
+}
 function Board() {
   const { user, token, logout } = useAuth()
 
@@ -307,7 +348,10 @@ function Board() {
   const [taskModal, setTaskModal] = useState(null)
   const [projectModal, setProjectModal] = useState(false)
 const [openTask, setOpenTask] = useState(null)
-const [dragOver, setDragOver] = useState(null) 
+const [dragOver, setDragOver] = useState(null)
+const [search, setSearch] = useState('')
+const [priorityFilter, setPriorityFilter] = useState('All')
+const [sortBy, setSortBy] = useState('oldest')
   
   
 
@@ -396,6 +440,22 @@ const [dragOver, setDragOver] = useState(null)
       setError(err.message)
     }
   }
+  const visibleTasks = tasks
+    .filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
+    .filter((t) => priorityFilter === 'All' || t.priority === priorityFilter)
+    .sort((a, b) => {
+      if (sortBy === 'priority') return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
+      if (sortBy === 'due') {
+        if (!a.dueDate && !b.dueDate) return 0
+        if (!a.dueDate) return 1
+        if (!b.dueDate) return -1
+        return new Date(a.dueDate) - new Date(b.dueDate)
+      }
+      if (sortBy === 'newest') return new Date(b.createdAt) - new Date(a.createdAt)
+      return 0
+    })
+
+  
 
   return (
     <div className="flex min-h-screen text-zinc-200">
@@ -465,7 +525,7 @@ const [dragOver, setDragOver] = useState(null)
                 </span>
               ))}
             </div>
-
+            <StatsRow tasks={tasks} />
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
               <div className="flex rounded-lg border border-white/8 bg-black/30 p-1 text-xs">
                 <span className="rounded-md bg-white/10 px-3 py-1.5 text-zinc-100">Kanban</span>
@@ -473,12 +533,38 @@ const [dragOver, setDragOver] = useState(null)
                 <span className="px-3 py-1.5 text-zinc-500">Timeline</span>
               </div>
               <div className="flex items-center gap-2 text-xs">
-                <button className="flex items-center gap-2 rounded-lg border border-white/8 px-3 py-2 text-zinc-400 hover:bg-white/5">
-                  <ArrowUpDown size={14} /> Sort by
-                </button>
-                <button className="flex items-center gap-2 rounded-lg border border-white/8 px-3 py-2 text-zinc-400 hover:bg-white/5">
-                  <SlidersHorizontal size={14} /> Filter
-                </button>
+                               <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search tasks..."
+                  className="w-44 rounded-lg border border-white/8 bg-black/30 px-3 py-2 text-zinc-200 outline-none placeholder:text-zinc-600 focus:border-accent-text/60"
+                />
+                <label className="flex items-center gap-2 rounded-lg border border-white/8 px-3 py-2 text-zinc-400">
+                  <SlidersHorizontal size={14} />
+                  <select
+                    value={priorityFilter}
+                    onChange={(e) => setPriorityFilter(e.target.value)}
+                    className="bg-transparent outline-none"
+                  >
+                    <option value="All" className="bg-black">All priorities</option>
+                    <option value="High" className="bg-black">High</option>
+                    <option value="Medium" className="bg-black">Medium</option>
+                    <option value="Low" className="bg-black">Low</option>
+                  </select>
+                </label>
+                <label className="flex items-center gap-2 rounded-lg border border-white/8 px-3 py-2 text-zinc-400">
+                  <ArrowUpDown size={14} />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-transparent outline-none"
+                  >
+                    <option value="oldest" className="bg-black">Oldest first</option>
+                    <option value="newest" className="bg-black">Newest first</option>
+                    <option value="priority" className="bg-black">Priority</option>
+                    <option value="due" className="bg-black">Due date</option>
+                  </select>
+                </label>
                 <button
                   onClick={() => setTaskModal('todo')}
                   className="flex items-center gap-2 rounded-lg bg-accent px-3 py-2 font-semibold text-black hover:opacity-90"
@@ -490,7 +576,7 @@ const [dragOver, setDragOver] = useState(null)
 
             <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
               {COLUMNS.map((col, colIndex) => {
-                const colTasks = tasks.filter((t) => t.status === col.key)
+                                const colTasks = visibleTasks.filter((t) => t.status === col.key)
                 return (
 <section
   key={col.key}
@@ -558,6 +644,7 @@ const [dragOver, setDragOver] = useState(null)
       {openTask && (
         <TaskModal
           task={openTask}
+          members={activeProject?.members || []}
           onClose={() => setOpenTask(null)}
           onUpdated={updateTask}
         />

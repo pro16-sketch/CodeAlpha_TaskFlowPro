@@ -31,6 +31,14 @@ async function loadTask(req, res) {
 router.patch('/:id', async (req, res) => {
   const task = await loadTask(req, res)
   if (!task) return
+   if (req.body.assignees !== undefined) {
+    const project = await Project.findById(task.project)
+    const memberIds = project.members.map((m) => m.toString())
+    const list = req.body.assignees
+    if (!Array.isArray(list) || !list.every((id) => memberIds.includes(String(id)))) {
+      return res.status(400).json({ message: 'Assignees must be members of this project' })
+    }
+  }
 
   const allowed = ['title', 'description', 'status', 'priority', 'category', 'dueDate', 'assignees', 'subtasks']
   allowed.forEach((field) => {
