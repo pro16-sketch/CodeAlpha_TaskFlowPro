@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Auth from './pages/Auth'
 import Board from './pages/Board'
+import Dashboard from './pages/Dashboard'
+import MyTasks from './pages/MyTasks'
 
 function Protected({ children }) {
   const { user, loading } = useAuth()
@@ -19,6 +21,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Protected><Board /></Protected>} />
+      <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+      <Route path="/my-tasks" element={<Protected><MyTasks /></Protected>} />
       <Route path="/login" element={<PublicOnly><Auth mode="login" /></PublicOnly>} />
       <Route path="/signup" element={<PublicOnly><Auth mode="signup" /></PublicOnly>} />
       <Route path="*" element={<Navigate to="/" replace />} />

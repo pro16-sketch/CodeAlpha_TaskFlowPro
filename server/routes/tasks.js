@@ -26,6 +26,25 @@ async function loadTask(req, res) {
     return null
   }
 }
+// Mujhe assign hue tasks (saare projects se)
+router.get('/mine', async (req, res) => {
+  const projects = await Project.find({ members: req.userId }).select('_id')
+  const tasks = await Task.find({
+    assignees: req.userId,
+    project: { $in: projects.map((p) => p._id) },
+  })
+    .populate('project', 'name color')
+    .sort('-createdAt')
+  res.json(tasks)
+})
+
+// Dashboard ke liye: mere projects aur unke saare tasks
+router.get('/overview', async (req, res) => {
+  const projects = await Project.find({ members: req.userId }).select('name color')
+  const tasks = await Task.find({ project: { $in: projects.map((p) => p._id) } })
+    .select('project status dueDate assignees')
+  res.json({ projects, tasks })
+})
 
 // Task update (title, status, priority, subtasks, etc.)
 router.patch('/:id', async (req, res) => {

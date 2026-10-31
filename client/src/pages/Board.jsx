@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { request } from '../api'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import TaskModal from '../components/TaskModal'
 import {
   LayoutDashboard, FolderKanban, CheckSquare, Bell, Settings,
@@ -229,13 +230,14 @@ function TaskCard({ task, colIndex, onMove, onDelete, onOpen }) {
   )
 }
 
-function Sidebar({ user, logout, projects, activeId, onSelect, onNewProject }) {
+export function Sidebar({ user, logout, projects, activeId, onSelect, onNewProject, page = 'projects' }) {
+  const navigate = useNavigate()
   const nav = [
-    { icon: LayoutDashboard, label: 'Dashboard' },
-    { icon: FolderKanban, label: 'Projects', active: true },
-    { icon: CheckSquare, label: 'My Tasks' },
-    { icon: Bell, label: 'Notifications' },
-    { icon: Settings, label: 'Settings' },
+    { icon: LayoutDashboard, label: 'Dashboard', key: 'dashboard', to: '/dashboard' },
+    { icon: FolderKanban, label: 'Projects', key: 'projects', to: '/' },
+    { icon: CheckSquare, label: 'My Tasks', key: 'mytasks', to: '/my-tasks' },
+    { icon: Bell, label: 'Notifications', key: 'notifications' },
+    { icon: Settings, label: 'Settings', key: 'settings' },
   ]
 
   return (
@@ -250,11 +252,12 @@ function Sidebar({ user, logout, projects, activeId, onSelect, onNewProject }) {
       </div>
 
       <nav className="mt-5 space-y-1">
-        {nav.map(({ icon: Icon, label, active }) => (
+        {nav.map(({ icon: Icon, label, key, to }) => (
           <div
-            key={label}
+            key={key}
+            onClick={() => to && navigate(to)}
             className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm ${
-              active ? 'bg-accent/25 text-accent-text' : 'text-zinc-400 hover:bg-white/5'
+              page === key ? 'bg-accent/25 text-accent-text' : 'text-zinc-400 hover:bg-white/5'
             }`}
           >
             <Icon size={17} /> {label}
@@ -339,6 +342,7 @@ function StatsRow({ tasks }) {
 }
 function Board() {
   const { user, token, logout } = useAuth()
+  const [searchParams] = useSearchParams()  
 
   const [projects, setProjects] = useState([])
   const [activeId, setActiveId] = useState(null)
@@ -362,8 +366,8 @@ const [sortBy, setSortBy] = useState('oldest')
     try {
       const list = await request('/projects', { token })
       setProjects(list)
-      setActiveId((current) => selectId || current || list[0]?._id || null)
-    } catch (err) {
+      const wanted = list.find((p) => p._id === searchParams.get('project'))
+      setActiveId((current) => selectId || current || wanted?._id || list[0]?._id || null)    } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
@@ -380,6 +384,9 @@ const [sortBy, setSortBy] = useState('oldest')
 
   useEffect(() => {
     fetchProjects()
+  }, [])
+    useEffect(() => {
+    if (searchParams.get('new')) setProjectModal(true)
   }, [])
 
   useEffect(() => {
