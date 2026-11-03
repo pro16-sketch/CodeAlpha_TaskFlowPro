@@ -4,6 +4,7 @@ import { request } from '../api'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import TaskModal from '../components/TaskModal'
 import ProjectSettingsModal from '../components/ProjectSettingsModal'
+import ProjectOverview from '../components/ProjectOverview'
 import {
   LayoutDashboard, FolderKanban, CheckSquare, Bell, Settings,
   Search, Plus, MoreHorizontal, ArrowUpDown, SlidersHorizontal,
@@ -358,6 +359,7 @@ const [dragOver, setDragOver] = useState(null)
 const [search, setSearch] = useState('')
 const [priorityFilter, setPriorityFilter] = useState('All')
 const [sortBy, setSortBy] = useState('oldest')
+const [activeTab, setActiveTab] = useState('Board')
   
   
 
@@ -560,20 +562,30 @@ const [sortBy, setSortBy] = useState('oldest')
             </div>
 
             <div className="mt-5 flex gap-6 border-b border-white/8 text-sm">
-              {tabs.map((t) => (
-                <span
-                  key={t}
-                  className={`cursor-pointer pb-3 ${
-                    t === 'Board'
-                      ? 'border-b-2 border-accent-text text-accent-text'
-                      : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
-                >
-                  {t}
-                </span>
-              ))}
+             {tabs.map((t) => (
+  <button
+    key={t}
+    onClick={() => setActiveTab(t)}
+    className={`cursor-pointer pb-3 ${
+      activeTab === t
+        ? 'border-b-2 border-accent-text text-accent-text'
+        : 'text-zinc-500 hover:text-zinc-300'
+    }`}
+  >
+    {t}
+  </button>
+))}
             </div>
-            <StatsRow tasks={tasks} />
+            {activeTab === 'Overview' ? (
+  <div className="mt-5">
+    <ProjectOverview
+      project={activeProject}
+      tasks={tasks}
+    />
+  </div>
+) : activeTab === 'Board' ? (
+  <>
+    <StatsRow tasks={tasks} />
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
               <div className="flex rounded-lg border border-white/8 bg-black/30 p-1 text-xs">
                 <span className="rounded-md bg-white/10 px-3 py-1.5 text-zinc-100">Kanban</span>
@@ -677,7 +689,18 @@ const [sortBy, setSortBy] = useState('oldest')
                   </section>
                 )
               })}
-            </div>
+                </div>
+          </>
+) : (
+  <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] p-8 text-center">
+    <h3 className="font-serif text-xl text-zinc-200">
+      {activeTab}
+    </h3>
+    <p className="mt-2 text-sm text-zinc-500">
+      This section is coming soon.
+    </p>
+  </div>
+)}
           </>
         )}
       </main>

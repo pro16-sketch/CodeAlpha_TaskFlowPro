@@ -2,6 +2,7 @@ const express = require('express')
 const Project = require('../models/Project')
 const Task = require('../models/Task')
 const Comment = require('../models/Comment')
+const User = require('../models/User')
 const auth = require('../middleware/auth')
 
 const router = express.Router()

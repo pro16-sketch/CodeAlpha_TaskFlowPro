@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { X, Send, Trash2, Check } from 'lucide-react'
+import { X, Send, Trash2, Check, Pencil } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { request } from '../api'
 
@@ -30,6 +30,15 @@ export default function TaskModal({ task,members = [], onClose, onUpdated }) {
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState(false)
+
+const [form, setForm] = useState({
+  title: task.title,
+  description: task.description || '',
+  priority: task.priority,
+  category: task.category || '',
+  dueDate: task.dueDate ? task.dueDate.slice(0, 10) : '',
+})
   
 
   const subtasks = task.subtasks || []
