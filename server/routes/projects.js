@@ -1,7 +1,7 @@
 const express = require('express')
 const Project = require('../models/Project')
 const Task = require('../models/Task')
-const User = require('../models/User')
+const Comment = require('../models/Comment')
 const auth = require('../middleware/auth')
 
 const router = express.Router()
@@ -66,6 +66,8 @@ router.delete('/:id', async (req, res) => {
   if (project.owner.toString() !== req.userId) {
     return res.status(403).json({ message: 'Only the owner can delete this project' })
   }
+    const taskIds = (await Task.find({ project: project._id }).select('_id')).map((t) => t._id)
+  await Comment.deleteMany({ task: { $in: taskIds } })
   await Task.deleteMany({ project: project._id })
   await project.deleteOne()
   res.json({ message: 'Project deleted' })
@@ -124,6 +126,39 @@ router.post('/:id/tasks', async (req, res) => {
   } catch (err) {
     res.status(400).json({ message: err.message })
   }
+})
+// Project ka naam badalna (sirf owner)
+router.patch('/:id', async (req, res) => {
+  const project = await loadProject(req, res)
+  if (!project) return
+  if (project.owner.toString() !== req.userId) {
+    return res.status(403).json({ message: 'Only the owner can rename this project' })
+  }
+  const name = req.body.name?.trim()
+  if (!name) return res.status(400).json({ message: 'Project name is required' })
+
+  project.name = name
+  await project.save()
+  res.json(project)
+})
+
+// Member ko project se hatana (sirf owner)
+router.delete('/:id/members/:userId', async (req, res) => {
+  const project = await loadProject(req, res)
+  if (!project) return
+  if (project.owner.toString() !== req.userId) {
+    return res.status(403).json({ message: 'Only the owner can remove members' })
+  }
+  if (req.params.userId === project.owner.toString()) {
+    return res.status(400).json({ message: 'The owner cannot be removed' })
+  }
+
+  project.members = project.members.filter((m) => m.toString() !== req.params.userId)
+  await project.save()
+  await Task.updateMany({ project: project._id }, { $pull: { assignees: req.params.userId } })
+
+  await project.populate('members', 'name email')
+  res.json(project)
 })
 
 module.exports = router

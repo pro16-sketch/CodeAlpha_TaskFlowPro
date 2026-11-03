@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { request } from '../api'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import TaskModal from '../components/TaskModal'
+import ProjectSettingsModal from '../components/ProjectSettingsModal'
 import {
   LayoutDashboard, FolderKanban, CheckSquare, Bell, Settings,
   Search, Plus, MoreHorizontal, ArrowUpDown, SlidersHorizontal,
@@ -352,6 +353,7 @@ function Board() {
   const [taskModal, setTaskModal] = useState(null)
   const [projectModal, setProjectModal] = useState(false)
 const [openTask, setOpenTask] = useState(null)
+const [settingsOpen, setSettingsOpen] = useState(false)
 const [dragOver, setDragOver] = useState(null)
 const [search, setSearch] = useState('')
 const [priorityFilter, setPriorityFilter] = useState('All')
@@ -447,6 +449,38 @@ const [sortBy, setSortBy] = useState('oldest')
       setError(err.message)
     }
   }
+    const myId = user?.id || user?._id
+
+  const renameProject = async (name) => {
+    try {
+      await request(`/projects/${activeId}`, { method: 'PATCH', token, body: { name } })
+      await fetchProjects(activeId)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const removeMember = async (userId) => {
+    try {
+      await request(`/projects/${activeId}/members/${userId}`, { method: 'DELETE', token })
+      await fetchProjects(activeId)
+      await fetchTasks(activeId)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const deleteProject = async () => {
+    try {
+      await request(`/projects/${activeId}`, { method: 'DELETE', token })
+      setSettingsOpen(false)
+      setActiveId(null)
+      setTasks([])
+      await fetchProjects()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
   const visibleTasks = tasks
     .filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
     .filter((t) => priorityFilter === 'All' || t.priority === priorityFilter)
@@ -514,6 +548,13 @@ const [sortBy, setSortBy] = useState('oldest')
                   className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-zinc-300 hover:bg-white/5"
                 >
                   + Invite
+                </button>
+                                <button
+                  onClick={() => setSettingsOpen(true)}
+                  title="Project settings"
+                  className="rounded-lg border border-white/10 p-2 text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                >
+                  <Settings size={15} />
                 </button>
               </div>
             </div>
@@ -654,6 +695,16 @@ const [sortBy, setSortBy] = useState('oldest')
           members={activeProject?.members || []}
           onClose={() => setOpenTask(null)}
           onUpdated={updateTask}
+        />
+      )}
+      {settingsOpen && activeProject && (
+        <ProjectSettingsModal
+          project={activeProject}
+          myId={myId}
+          onClose={() => setSettingsOpen(false)}
+          onRename={renameProject}
+          onRemoveMember={removeMember}
+          onDelete={deleteProject}
         />
       )}
     </div>

@@ -10,7 +10,8 @@ const priorityStyle = {
 }
 
 const STATUS_LABEL = { todo: 'To Do', inprogress: 'In Progress', done: 'Done' }
-
+const inputClass =
+  'w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-accent-text/60'
 function timeAgo(date) {
   const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
   if (s < 60) return 'just now'
@@ -29,6 +30,7 @@ export default function TaskModal({ task,members = [], onClose, onUpdated }) {
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  
 
   const subtasks = task.subtasks || []
   const done = subtasks.filter((s) => s.done).length
@@ -57,7 +59,43 @@ export default function TaskModal({ task,members = [], onClose, onUpdated }) {
       .then(setComments)
       .catch((err) => setError(err.message))
   }, [task._id])
+  const onFormChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
+  const startEdit = () => {
+    setForm({
+      title: task.title,
+      description: task.description || '',
+      priority: task.priority,
+      category: task.category || '',
+      dueDate: task.dueDate ? task.dueDate.slice(0, 10) : '',
+    })
+    setEditing(true)
+  }
+
+  const saveEdit = async (e) => {
+    e.preventDefault()
+    if (!form.title.trim()) return
+    setBusy(true)
+    try {
+      const updated = await request(`/tasks/${task._id}`, {
+        method: 'PATCH',
+        token,
+        body: {
+          title: form.title.trim(),
+          description: form.description.trim(),
+          priority: form.priority,
+          category: form.category.trim() || 'General',
+          dueDate: form.dueDate || null,
+        },
+      })
+      onUpdated(updated)
+      setEditing(false)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
   const toggleSubtask = async (index) => {
     const next = subtasks.map((s, i) => (i === index ? { ...s, done: !s.done } : s))
     try {
@@ -121,12 +159,58 @@ export default function TaskModal({ task,members = [], onClose, onUpdated }) {
                 {STATUS_LABEL[task.status]}
               </span>
             </div>
-            <button onClick={onClose} className="text-zinc-500 hover:text-zinc-200">
-              <X size={18} />
-            </button>
+                       <div className="flex items-center gap-3 text-zinc-500">
+              {!editing && (
+                <button onClick={startEdit} title="Edit task" className="hover:text-accent-text">
+                  <Pencil size={16} />
+                </button>
+              )}
+              <button onClick={onClose} className="hover:text-zinc-200">
+                <X size={18} />
+              </button>
+            </div>
           </div>
           <h3 className="mt-3 font-serif text-2xl font-semibold text-zinc-100">{task.title}</h3>
-          {task.description && <p className="mt-2 text-sm text-zinc-400">{task.description}</p>}
+          {task.description && <p className="mt-2 text-sm text-zinc-400">{task.description}</p>}          {editing ? (
+            <form onSubmit={saveEdit} className="mt-3 space-y-3">
+              <input name="title" value={form.title} onChange={onFormChange} placeholder="Task title" className={inputClass} required autoFocus />
+              <textarea name="description" value={form.description} onChange={onFormChange} placeholder="Description" rows={2} className={inputClass} />
+              <div className="grid grid-cols-2 gap-3">
+                <select name="priority" value={form.priority} onChange={onFormChange} className={inputClass}>
+                  <option className="bg-black">High</option>
+                  <option className="bg-black">Medium</option>
+                  <option className="bg-black">Low</option>
+                </select>
+                <input name="category" value={form.category} onChange={onFormChange} placeholder="Category" className={inputClass} />
+              </div>
+              <input name="dueDate" type="date" value={form.dueDate} onChange={onFormChange} className={inputClass} />
+              <div className="flex gap-2">
+                <button
+                  disabled={busy}
+                  className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-50"
+                >
+                  Save changes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  className="rounded-lg border border-white/10 px-4 py-2 text-sm text-zinc-300 hover:bg-white/5"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <h3 className="mt-3 font-serif text-2xl font-semibold text-zinc-100">{task.title}</h3>
+              {task.description && <p className="mt-2 text-sm text-zinc-400">{task.description}</p>}
+              {task.dueDate && (
+                <p className="mt-2 text-xs text-zinc-500">
+                  Due {new Date(task.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </p>
+              )}
+            </>
+          )}
         </div>
 
         {/* Scrollable body */}
