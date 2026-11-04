@@ -1,4 +1,3 @@
-
 function ProjectOverview({ project, tasks = [] }) {
   const total = tasks.length
   const completed = tasks.filter(t => t.status === 'done').length
