@@ -5,6 +5,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import TaskModal from '../components/TaskModal'
 import ProjectSettingsModal from '../components/ProjectSettingsModal'
 import ProjectOverview from '../components/ProjectOverview'
+import ProjectTeam from '../components/ProjectTeam'
+import ProjectFiles from '../components/ProjectFiles'
 import {
   LayoutDashboard, FolderKanban, CheckSquare, Bell, Settings,
   Search, Plus, MoreHorizontal, ArrowUpDown, SlidersHorizontal,
@@ -583,6 +585,23 @@ const [activeTab, setActiveTab] = useState('Board')
       tasks={tasks}
     />
   </div>
+) : activeTab === 'Team' ? (
+  <div className="mt-5">
+    <ProjectTeam
+      project={activeProject}
+      myId={myId}
+      onInvite={invite}
+      onRemoveMember={removeMember}
+    />
+  </div>
+  ) : activeTab === 'Files' ? (
+  <ProjectFiles
+    projectId={activeProject._id}
+    token={token}
+    isOwner={
+      String(activeProject.owner?._id || activeProject.owner) === String(myId)
+    }
+  />
 ) : activeTab === 'Board' ? (
   <>
     <StatsRow tasks={tasks} />
