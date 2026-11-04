@@ -2,6 +2,7 @@ const express = require('express')
 const Project = require('../models/Project')
 const Task = require('../models/Task')
 const Comment = require('../models/Comment')
+const Notification = require('../models/Notification')
 const auth = require('../middleware/auth')
 
 const router = express.Router()
@@ -49,6 +50,7 @@ router.get('/overview', async (req, res) => {
 // Task update (title, status, priority, subtasks, etc.)
 router.patch('/:id', async (req, res) => {
   const task = await loadTask(req, res)
+  const previousAssignees = task.assignees.map((id) => String(id))
   if (!task) return
    if (req.body.assignees !== undefined) {
     const project = await Project.findById(task.project)
@@ -66,6 +68,25 @@ router.patch('/:id', async (req, res) => {
 
   try {
     await task.save()
+    const newlyAssigned = task.assignees
+  .map((id) => String(id))
+  .filter((id) => !previousAssignees.includes(id) && id !== String(req.userId))
+
+if (newlyAssigned.length) {
+  try {
+    await Notification.insertMany(
+      newlyAssigned.map((recipient) => ({
+        recipient,
+        actor: req.userId,
+        project: task.project,
+        type: 'task_assigned',
+        message: `You have been assigned to task: ${task.title}`,
+      }))
+    )
+  } catch (notificationError) {
+    console.error('Task notification error:', notificationError)
+  }
+}
     await task.populate('assignees', 'name email')
     res.json(task)
   } catch (err) {

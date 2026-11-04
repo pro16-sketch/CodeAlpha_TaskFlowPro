@@ -23,6 +23,8 @@ app.get('/', (req, res) => {
 app.use('/api/auth', require('./routes/auth'))
 app.use('/api/projects', require('./routes/projects'))
 app.use('/api/tasks', require('./routes/tasks'))
+app.use('/api/discussions', require('./routes/discussions'))
+app.use('/api/notifications', require('./routes/notifications'))
 app.use('/api/files', require('./routes/files'))
 const PORT = process.env.PORT || 5000
 

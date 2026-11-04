@@ -7,6 +7,7 @@ import ProjectSettingsModal from '../components/ProjectSettingsModal'
 import ProjectOverview from '../components/ProjectOverview'
 import ProjectTeam from '../components/ProjectTeam'
 import ProjectFiles from '../components/ProjectFiles'
+import ProjectDiscussions from '../components/ProjectDiscussions'
 import {
   LayoutDashboard, FolderKanban, CheckSquare, Bell, Settings,
   Search, Plus, MoreHorizontal, ArrowUpDown, SlidersHorizontal,
@@ -240,7 +241,7 @@ export function Sidebar({ user, logout, projects, activeId, onSelect, onNewProje
     { icon: LayoutDashboard, label: 'Dashboard', key: 'dashboard', to: '/dashboard' },
     { icon: FolderKanban, label: 'Projects', key: 'projects', to: '/' },
     { icon: CheckSquare, label: 'My Tasks', key: 'mytasks', to: '/my-tasks' },
-    { icon: Bell, label: 'Notifications', key: 'notifications' },
+    { icon: Bell, label: 'Notifications', key: 'notifications', to: '/notifications' },
     { icon: Settings, label: 'Settings', key: 'settings' },
   ]
 
@@ -585,6 +586,12 @@ const [activeTab, setActiveTab] = useState('Board')
       tasks={tasks}
     />
   </div>
+  ) : activeTab === 'Discussions' ? (
+  <ProjectDiscussions
+    projectId={activeProject._id}
+    token={token}
+    myId={myId}
+  />
 ) : activeTab === 'Team' ? (
   <div className="mt-5">
     <ProjectTeam

@@ -3,6 +3,7 @@ const Project = require('../models/Project')
 const Task = require('../models/Task')
 const Comment = require('../models/Comment')
 const User = require('../models/User')
+const Notification = require('../models/Notification')
 const auth = require('../middleware/auth')
 
 const router = express.Router()
@@ -84,10 +85,26 @@ router.post('/:id/members', async (req, res) => {
   const user = await User.findOne({ email: req.body.email?.toLowerCase() })
   if (!user) return res.status(404).json({ message: 'No user with that email' })
 
-  if (!project.members.some((m) => m.toString() === user._id.toString())) {
-    project.members.push(user._id)
-    await project.save()
+ const alreadyMember = project.members.some(
+  (m) => m.toString() === user._id.toString()
+)
+
+if (!alreadyMember) {
+  project.members.push(user._id)
+  await project.save()
+
+  try {
+    await Notification.create({
+      recipient: user._id,
+      actor: req.userId,
+      project: project._id,
+      type: 'project_invite',
+      message: `You have been added to project: ${project.name}`,
+    })
+  } catch (notificationError) {
+    console.error('Project invitation notification error:', notificationError)
   }
+}
   await project.populate('members', 'name email')
   res.json(project)
 })
@@ -123,6 +140,25 @@ router.post('/:id/tasks', async (req, res) => {
       subtasks,
       createdBy: req.userId,
     })
+    const assignedUsers = (task.assignees || [])
+  .map((id) => String(id))
+  .filter((id) => id !== String(req.userId))
+
+if (assignedUsers.length) {
+  try {
+    await Notification.insertMany(
+      assignedUsers.map((recipient) => ({
+        recipient,
+        actor: req.userId,
+        project: project._id,
+        type: 'task_assigned',
+        message: `You have been assigned to task: ${task.title}`,
+      }))
+    )
+  } catch (notificationError) {
+    console.error('Task creation notification error:', notificationError)
+  }
+}
     res.status(201).json(task)
   } catch (err) {
     res.status(400).json({ message: err.message })
