@@ -23,7 +23,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', require('./routes/auth'))
 app.use('/api/projects', require('./routes/projects'))
 app.use('/api/tasks', require('./routes/tasks'))
-
+app.use('/api/files', require('./routes/files'))
 const PORT = process.env.PORT || 5000
 
 connectDB().then(() => {
