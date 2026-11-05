@@ -76,6 +76,8 @@ if (recipients.length) {
         project: access.project._id,
         type: 'discussion',
         message: `${author?.name || 'A teammate'} posted a new discussion message`,
+        discussionMessage: created.message,
+        task: null,
       }))
     )
   } catch (notificationError) {

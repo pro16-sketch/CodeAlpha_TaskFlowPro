@@ -19,6 +19,15 @@ const notificationSchema = new mongoose.Schema(
       ref: 'Project',
       default: null,
     },
+    task: {
+     type: mongoose.Schema.Types.ObjectId,
+     ref: 'Task',
+     default: null,
+},
+discussionMessage: {
+  type: String,
+  default: '',
+},
     type: {
       type: String,
       enum: ['project_invite', 'task_assigned', 'discussion', 'mention', 'task_update'],

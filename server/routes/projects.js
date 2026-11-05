@@ -140,7 +140,7 @@ router.post('/:id/tasks', async (req, res) => {
       subtasks,
       createdBy: req.userId,
     })
-    const assignedUsers = (task.assignees || [])
+  const assignedUsers = (task.assignees || [])
   .map((id) => String(id))
   .filter((id) => id !== String(req.userId))
 
@@ -151,8 +151,9 @@ if (assignedUsers.length) {
         recipient,
         actor: req.userId,
         project: project._id,
+        task: task._id,
         type: 'task_assigned',
-        message: `You have been assigned to task: ${task.title}`,
+        message: `Task assignment updated: ${task.title}`,
       }))
     )
   } catch (notificationError) {

@@ -14,6 +14,7 @@ router.get('/', async (req, res) => {
     })
       .populate('actor', 'name')
       .populate('project', 'name')
+      .populate('task', 'title description')
       .sort({ createdAt: -1 })
       .limit(100)
 

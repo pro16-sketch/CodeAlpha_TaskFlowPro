@@ -153,12 +153,39 @@ export default function NotificationCenter({ token }) {
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-zinc-200">{item.message}</p>
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="text-sm font-medium text-zinc-100">
+                    {item.message}
+                  </p>
+
+                  {item.task?.title && (
+                    <div className="mt-2 rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                      <p className="text-xs text-zinc-500">TASK DETAILS</p>
+                      <p className="mt-1 text-sm text-zinc-200">
+                        {item.task.title}
+                      </p>
+                      {item.task.description && (
+                        <p className="mt-1 text-xs text-zinc-400">
+                          {item.task.description}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {item.discussionMessage && (
+                    <div className="mt-2 rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                      <p className="text-xs text-zinc-500">DISCUSSION MESSAGE</p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-zinc-300">
+                        {item.discussionMessage}
+                      </p>
+                    </div>
+                  )}
+
+                  <p className="mt-2 text-xs text-zinc-500">
                     {item.actor?.name ? `By ${item.actor.name} · ` : ''}
                     {item.project?.name ? `${item.project.name} · ` : ''}
                     {new Date(item.createdAt).toLocaleString('en-IN')}
                   </p>
+
                   {!item.read && (
                     <button
                       onClick={() => markRead(item._id)}

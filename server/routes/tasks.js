@@ -79,8 +79,9 @@ if (newlyAssigned.length) {
         recipient,
         actor: req.userId,
         project: task.project,
+        task: task._id,
         type: 'task_assigned',
-        message: `You have been assigned to task: ${task.title}`,
+        message: `Task assignment updated: ${task.title}`,
       }))
     )
   } catch (notificationError) {
