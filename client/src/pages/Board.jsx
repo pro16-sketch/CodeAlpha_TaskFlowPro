@@ -236,12 +236,37 @@ function TaskCard({ task, colIndex, onMove, onDelete, onOpen }) {
 }
 
 export function Sidebar({ user, logout, projects, activeId, onSelect, onNewProject, page = 'projects' }) {
+  
+  const { token } = useAuth()
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (!token) return
+
+    const loadUnreadCount = async () => {
+      try {
+        const notifications = await request('/notifications', { token })
+        setUnreadCount(
+          notifications.filter((item) => !item.read).length
+        )
+      } catch (error) {
+        console.error('Unread notification count error:', error)
+      }
+    }
+
+    loadUnreadCount()
+
+    const interval = setInterval(loadUnreadCount, 10000)
+
+    return () => clearInterval(interval)
+  }, [token])
+
   const navigate = useNavigate()
   const nav = [
     { icon: LayoutDashboard, label: 'Dashboard', key: 'dashboard', to: '/dashboard' },
     { icon: FolderKanban, label: 'Projects', key: 'projects', to: '/' },
     { icon: CheckSquare, label: 'My Tasks', key: 'mytasks', to: '/my-tasks' },
-    { icon: Bell, label: 'Notifications', key: 'notifications', to: '/notifications' },
+   { icon: Bell, label: 'Notifications', key: 'notifications', to: '/notifications' },
     { icon: Settings, label: 'Settings', key: 'settings' },
   ]
 
@@ -257,17 +282,26 @@ export function Sidebar({ user, logout, projects, activeId, onSelect, onNewProje
       </div>
 
       <nav className="mt-5 space-y-1">
-        {nav.map(({ icon: Icon, label, key, to }) => (
-          <div
-            key={key}
-            onClick={() => to && navigate(to)}
-            className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm ${
-              page === key ? 'bg-accent/25 text-accent-text' : 'text-zinc-400 hover:bg-white/5'
-            }`}
-          >
-            <Icon size={17} /> {label}
-          </div>
-        ))}
+        
+{nav.map(({ icon: Icon, label, key, to }) => (
+  <div
+    key={key}
+    onClick={() => to && navigate(to)}
+    className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm ${
+      page === key ? 'bg-accent/25 text-accent-text' : 'text-zinc-400 hover:bg-white/5'
+    }`}
+  >
+    <Icon size={17} />
+    <span className="flex-1">{label}</span>
+
+    {key === 'notifications' && unreadCount > 0 && (
+      <span className="min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+        {unreadCount > 99 ? '99+' : unreadCount}
+      </span>
+    )}
+  </div>
+))}
+
       </nav>
 
       <div className="mt-6 flex items-center justify-between px-3">

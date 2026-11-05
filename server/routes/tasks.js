@@ -48,52 +48,96 @@ router.get('/overview', async (req, res) => {
 })
 
 // Task update (title, status, priority, subtasks, etc.)
+
+// Task update + notifications
+
+// Task update (title, status, priority, subtasks, etc.)
 router.patch('/:id', async (req, res) => {
   const task = await loadTask(req, res)
-  const previousAssignees = task.assignees.map((id) => String(id))
   if (!task) return
-   if (req.body.assignees !== undefined) {
+
+  const previousAssignees = task.assignees.map((id) => String(id))
+  const previousStatus = task.status
+
+  if (req.body.assignees !== undefined) {
     const project = await Project.findById(task.project)
     const memberIds = project.members.map((m) => m.toString())
     const list = req.body.assignees
+
     if (!Array.isArray(list) || !list.every((id) => memberIds.includes(String(id)))) {
-      return res.status(400).json({ message: 'Assignees must be members of this project' })
+      return res.status(400).json({
+        message: 'Assignees must be members of this project',
+      })
     }
   }
 
-  const allowed = ['title', 'description', 'status', 'priority', 'category', 'dueDate', 'assignees', 'subtasks']
+  const allowed = [
+    'title', 'description', 'status', 'priority',
+    'category', 'dueDate', 'assignees', 'subtasks',
+  ]
+
   allowed.forEach((field) => {
-    if (req.body[field] !== undefined) task[field] = req.body[field]
+    if (req.body[field] !== undefined) {
+      task[field] = req.body[field]
+    }
   })
 
   try {
     await task.save()
-    const newlyAssigned = task.assignees
-  .map((id) => String(id))
-  .filter((id) => !previousAssignees.includes(id) && id !== String(req.userId))
 
-if (newlyAssigned.length) {
-  try {
-    await Notification.insertMany(
-      newlyAssigned.map((recipient) => ({
-        recipient,
-        actor: req.userId,
-        project: task.project,
-        task: task._id,
-        type: 'task_assigned',
-        message: `Task assignment updated: ${task.title}`,
-      }))
-    )
-  } catch (notificationError) {
-    console.error('Task notification error:', notificationError)
-  }
-}
+    // Notify newly assigned users
+    const newlyAssigned = task.assignees
+      .map((id) => String(id))
+      .filter((id) => !previousAssignees.includes(id) && id !== String(req.userId))
+
+    if (newlyAssigned.length) {
+      try {
+        await Notification.insertMany(
+          newlyAssigned.map((recipient) => ({
+            recipient,
+            actor: req.userId,
+            project: task.project,
+            task: task._id,
+            type: 'task_assigned',
+            message: `Task assignment updated: ${task.title}`,
+          }))
+        )
+      } catch (notificationError) {
+        console.error('Task assignment notification error:', notificationError)
+      }
+    }
+
+    // Notify assignees when task status changes
+    if (req.body.status !== undefined && previousStatus !== task.status) {
+      const recipients = task.assignees
+        .map((id) => String(id))
+        .filter((id) => id !== String(req.userId))
+
+      if (recipients.length) {
+        try {
+          await Notification.insertMany(
+            recipients.map((recipient) => ({
+              recipient,
+              actor: req.userId,
+              project: task.project,
+              task: task._id,
+              type: 'task_update',
+              message: `Task status changed to ${task.status}: ${task.title}`,
+            }))
+          )
+        } catch (notificationError) {
+          console.error('Task update notification error:', notificationError)
+        }
+      }
+    }
+
     await task.populate('assignees', 'name email')
     res.json(task)
   } catch (err) {
     res.status(400).json({ message: err.message })
   }
 })
+
 
 // Task delete (uske comments bhi)
 router.delete('/:id', async (req, res) => {

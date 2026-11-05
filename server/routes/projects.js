@@ -3,9 +3,7 @@ const Project = require('../models/Project')
 const Task = require('../models/Task')
 const Comment = require('../models/Comment')
 const User = require('../models/User')
-const Notification = require('../models/Notification')
 const auth = require('../middleware/auth')
-
 const router = express.Router()
 
 // Is router ke saare routes ke liye login zaroori
