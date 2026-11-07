@@ -267,8 +267,7 @@ export function Sidebar({ user, logout, projects, activeId, onSelect, onNewProje
     { icon: FolderKanban, label: 'Projects', key: 'projects', to: '/' },
     { icon: CheckSquare, label: 'My Tasks', key: 'mytasks', to: '/my-tasks' },
    { icon: Bell, label: 'Notifications', key: 'notifications', to: '/notifications' },
-    { icon: Settings, label: 'Settings', key: 'settings' },
-  ]
+{ icon: Settings, label: 'Settings', key: 'settings', to: '/settings' },  ]
 
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-white/10 bg-white/3 p-4 backdrop-blur-xl">

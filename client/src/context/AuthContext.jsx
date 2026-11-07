@@ -28,6 +28,9 @@ export function AuthProvider({ children }) {
     setToken(data.token)
     setUser(data.user)
   }
+  const updateUser = (updatedUser) => {
+  setUser(updatedUser)
+}
 
   const login = async (email, password) =>
     saveSession(await request('/auth/login', { method: 'POST', body: { email, password } }))
@@ -42,7 +45,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   )

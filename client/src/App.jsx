@@ -5,7 +5,7 @@ import Board from './pages/Board'
 import Dashboard from './pages/Dashboard'
 import MyTasks from './pages/MyTasks'
 import Notifications from './pages/Notifications'
-
+import Settings from './pages/Settings'
 function Protected({ children }) {
   const { user, loading } = useAuth()
   if (loading) return <div className="grid min-h-screen place-items-center text-zinc-500">Loading...</div>
@@ -25,6 +25,7 @@ export default function App() {
       <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
       <Route path="/my-tasks" element={<Protected><MyTasks /></Protected>} />
       <Route path="/notifications" element={<Protected><Notifications /></Protected>} />
+      <Route path="/settings" element={<Protected><Settings /></Protected>} />
       <Route path="/login" element={<PublicOnly><Auth mode="login" /></PublicOnly>} />
       <Route path="/signup" element={<PublicOnly><Auth mode="signup" /></PublicOnly>} />
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -18,3 +18,78 @@ body {
     #000000;
   background-attachment: fixed;
 }
+
+/* TASKFLOW PRO — LIGHT MODE */
+
+html.light-mode {
+  color-scheme: light;
+}
+
+html.light-mode body {
+  background: #f3f6fb !important;
+  color: #172033;
+}
+
+/* Main app backgrounds */
+html.light-mode .bg-base {
+  background-color: #f3f6fb !important;
+}
+
+html.light-mode .bg-surface {
+  background-color: #ffffff !important;
+}
+
+html.light-mode .bg-card {
+  background-color: #ffffff !important;
+}
+
+/* Dark panels and cards */
+html.light-mode [class*="bg-black"],
+html.light-mode [class*="bg-white/"] {
+  background-color: #ffffff !important;
+}
+
+/* Main text */
+html.light-mode .text-white,
+html.light-mode .text-zinc-100,
+html.light-mode .text-zinc-200,
+html.light-mode .text-zinc-300 {
+  color: #172033 !important;
+}
+
+/* Secondary text */
+html.light-mode .text-zinc-400,
+html.light-mode .text-zinc-500,
+html.light-mode .text-zinc-600 {
+  color: #64748b !important;
+}
+
+/* Borders */
+html.light-mode [class*="border-white/"] {
+  border-color: #d9e1ec !important;
+}
+
+/* Form fields */
+html.light-mode input,
+html.light-mode textarea,
+html.light-mode select {
+  background-color: #ffffff;
+  color: #172033;
+  border-color: #cbd5e1;
+}
+
+html.light-mode input::placeholder,
+html.light-mode textarea::placeholder {
+  color: #94a3b8;
+}
+
+/* Preserve contrast on primary buttons */
+html.light-mode button.bg-sky-200,
+html.light-mode button.bg-sky-300 {
+  color: #0f172a !important;
+}
+
+/* Hover surfaces */
+html.light-mode [class*="hover:bg-white/"]:hover {
+  background-color: #e9eef6 !important;
+}
